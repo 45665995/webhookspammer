@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>webhook spammer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(25, 25, 35, 0.95);
+            border-radius: 12px;
+            border: 1px solid #2a2a3a;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2d2d4e 0%, #1e1e3a 100%);
+            padding: 20px;
+            border-bottom: 1px solid #3a3a5a;
+        }
+        
+        .header h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #64b5f6;
+            margin-bottom: 5px;
+        }
+        
+        .header .subtitle {
+            color: #90a4ae;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .profile-setup {
+            background: #2d2d3d;
+            padding: 15px;
+            margin: 15px;
+            border-radius: 8px;
+            border: 1px solid #3a3a4a;
+        }
+        
+        .profile-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .status-bar {
+            background: #1e1e2e;
+            padding: 15px 20px;
+            border-bottom: 1px solid #2d2d3d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.idle { background: #ff9800; }
+        .status-dot.active { background: #4caf50; }
+        .status-dot.error { background: #f44336; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .control-panel {
+            padding: 20px;
+            display: grid;
+            gap: 15px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .input-group label {
+            font-size: 0.85em;
+            color: #90a4ae;
+            font-weight: 500;
+        }
+        
+        input, textarea {
+            background: #2d2d3d;
+            border: 1px solid #3a3a4a;
+            border-radius: 6px;
+            padding: 12px;
+            color: #e0e0e0;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #64b5f6;
+            box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2);
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
+            color: white;
+        }
+        
+        .btn-start:hover:not(:disabled) {
+            background: linear-gradient(135deg, #1b5e20 0%, #388e3c 100%);
+            transform: translateY(-1px);
+        }
+        
+        .btn-stop {
+            background: linear-gradient(135deg, #c62828 0%, #f44336 100%);
+            color: white;
+        }
+        
+        .btn-stop:hover:not(:disabled) {
+            background: linear-gradient(135deg, #b71c1c 0%, #d32f2f 100%);
+            transform: translateY(-1px);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .metric-card {
+            background: #2d2d3d;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #3a3a4a;
+        }
+        
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #64b5f6;
+            margin-bottom: 4px;
+        }
+        
+        .metric-label {
+            font-size: 0.8em;
+            color: #90a4ae;
+        }
+        
+        .log-container {
+            margin-top: 15px;
+            border: 1px solid #2d2d3d;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .log-header {
+            background: #2d2d3d;
+            padding: 12px 16px;
+            font-size: 0.85em;
+            color: #90a4ae;
+        }
+        
+        .log-content {
+            height: 250px;
+            overflow-y: auto;
+            background: #1a1a2e;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+        
+        .log-entry {
+            margin-bottom: 6px;
+            padding: 3px 0;
+            border-bottom: 1px solid #2d2d3d;
+        }
+        
+        .log-time {
+            color: #78909c;
+            margin-right: 8px;
+        }
+        
+        .log-message {
+            color: #e0e0e0;
+        }
+        
+        .log-success { color: #4caf50; }
+        .log-error { color: #f44336; }
+        .log-warning { color: #ff9800; }
+        .log-info { color: #64b5f6; }
+        
+        .rate-info {
+            background: #1e1e2e;
+            padding: 12px;
+            margin-top: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #64b5f6;
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>webhook spammer thing</h1>
+            <div class="subtitle">send messages every second with your own name and pic</div>
+        </div>
+        
+        <div class="profile-setup">
+            <div class="input-group">
+                <label>your bot name</label>
+                <input type="text" id="botName" placeholder="cool bot name here" value="my awesome bot">
+            </div>
+            <div class="profile-fields">
+                <div class="input-group">
+                    <label>profile picture url (optional)</label>
+                    <input type="url" id="avatarUrl" placeholder="https://example.com/avatar.jpg">
+                </div>
+                <div class="input-group">
+                    <label>webhook url</label>
+                    <input type="url" id="webhookUrl" placeholder="https://discord.com/api/webhooks/...">
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot idle" id="statusDot"></div>
+                <span id="statusText">ready to start spamming</span>
+            </div>
+            <div class="rate-info">
+                sending 1 message per second
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <div class="input-group">
+                <label>message to send</label>
+                <textarea id="messageText" rows="3" placeholder="type your message here...">hello world this is a test message</textarea>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn-start" id="btnStart">start spamming</button>
+                <button class="btn-stop" id="btnStop" disabled>stop</button>
+            </div>
+            
+            <div class="metrics">
+                <div class="metric-card">
+                    <div class="metric-value" id="sentCount">0</div>
+                    <div class="metric-label">sent</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="successCount">0</div>
+                    <div class="metric-label">worked</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="errorCount">0</div>
+                    <div class="metric-label">errors</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="log-container">
+            <div class="log-header">whats happening</div>
+            <div class="log-content" id="logContent">
+                <div class="log-entry">
+                    <span class="log-time">[23:45:01]</span>
+                    <span class="log-message log-info">everything loaded put your webhook url and click start</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class WebhookSpammer {
+            constructor() {
+                this.isActive = false;
+                this.intervalId = null;
+                this.sentCount = 0;
+                this.successCount = 0;
+                this.errorCount = 0;
+                
+                this.initializeElements();
+                this.bindEvents();
+            }
+            
+            initializeElements() {
+                this.elements = {
+                    webhookUrl: document.getElementById('webhookUrl'),
+                    messageText: document.getElementById('messageText'),
+                    botName: document.getElementById('botName'),
+                    avatarUrl: document.getElementById('avatarUrl'),
+                    btnStart: document.getElementById('btnStart'),
+                    btnStop: document.getElementById('btnStop'),
+                    statusDot: document.getElementById('statusDot'),
+                    statusText: document.getElementById('statusText'),
+                    sentCount: document.getElementById('sentCount'),
+                    successCount: document.getElementById('successCount'),
+                    errorCount: document.getElementById('errorCount'),
+                    logContent: document.getElementById('logContent')
+                };
+            }
+            
+            bindEvents() {
+                this.elements.btnStart.addEventListener('click', () => this.startSpamming());
+                this.elements.btnStop.addEventListener('click', () => this.stopSpamming());
+            }
+            
+            async startSpamming() {
+                const url = this.elements.webhookUrl.value.trim();
+                const message = this.elements.messageText.value.trim();
+                const name = this.elements.botName.value.trim() || 'my bot';
+                const avatar = this.elements.avatarUrl.value.trim();
+                
+                if (!url) {
+                    this.logMessage('error need a webhook url first', 'error');
+                    return;
+                }
+                
+                if (!message) {
+                    this.logMessage('error need to type a message', 'error');
+                    return;
+                }
+                
+                this.isActive = true;
+                this.updateUI('active');
+                this.logMessage('starting to spam messages now', 'info');
+                this.logMessage(`using name: ${name}`, 'info');
+                this.logMessage('sending 1 message every second', 'info');
+                
+                // send first message right away
+                await this.sendMessage(url, message, name, avatar);
+                
+                // keep sending every second
+                this.intervalId = setInterval(async () => {
+                    if (this.isActive) {
+                        await this.sendMessage(url, message, name, avatar);
+                    }
+                }, 1000);
+            }
+            
+            stopSpamming() {
+                this.isActive = false;
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
+                
+                this.updateUI('idle');
+                this.logMessage('stopped spamming', 'warning');
+                this.logMessage(`done sent ${this.sentCount} messages ${this.successCount} worked ${this.errorCount} errors`, 'info');
+            }
+            
+            async sendMessage(url, baseMessage, name, avatar) {
+                this.sentCount++;
+                const requestId = this.sentCount;
+                
+                // add timestamp to message
+                const timestamp = new Date().toLocaleTimeString();
+                const dynamicMessage = baseMessage.replace('${timestamp}', timestamp);
+                
+                try {
+                    const payload = {
+                        content: dynamicMessage,
+                        username: name
+                    };
+                    
+                    // only add avatar if provided
+                    if (avatar) {
+                        payload.avatar_url = avatar;
+                    }
+                    
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (response.ok) {
+                        this.successCount++;
+                        this.logMessage(`message ${requestId} sent ok`, 'success');
+                        
+                        // check rate limits
+                        const remaining = response.headers.get('X-RateLimit-Remaining');
+                        const resetAfter = response.headers.get('X-RateLimit-Reset-After');
+                        
+                        if (remaining && resetAfter) {
+                            this.logMessage(`rate limit ${remaining} left reset in ${resetAfter}s`, 'info');
+                        }
+                    } else {
+                        this.errorCount++;
+                        if (response.status === 429) {
+                            const retryAfter = response.headers.get('Retry-After');
+                            this.logMessage(`message ${requestId} rate limited wait ${retryAfter}ms`, 'error');
+                        } else {
+                            this.logMessage(`message ${requestId} failed code ${response.status}`, 'error');
+                        }
+                    }
+                } catch (error) {
+                    this.errorCount++;
+                    this.logMessage(`message ${requestId} network error ${error.message}`, 'error');
+                }
+                
+                this.updateCounters();
+            }
+            
+            updateUI(state) {
+                const { statusDot, statusText, btnStart, btnStop } = this.elements;
+                
+                statusDot.className = 'status-dot ' + state;
+                btnStart.disabled = state === 'active';
+                btnStop.disabled = state !== 'active';
+                
+                switch(state) {
+                    case 'active':
+                        statusText.textContent = 'spamming messages right now';
+                        break;
+                    case 'idle':
+                        statusText.textContent = 'ready to start spamming';
+                        break;
+                    case 'error':
+                        statusText.textContent = 'something broke';
+                        break;
+                }
+            }
+            
+            updateCounters() {
+                this.elements.sentCount.textContent = this.sentCount;
+                this.elements.successCount.textContent = this.successCount;
+                this.elements.errorCount.textContent = this.errorCount;
+            }
+            
+            logMessage(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry';
+                logEntry.innerHTML = `
+                    <span class="log-time">[${timestamp}]</span>
+                    <span class="log-message log-${type}">${message}</span>
+                `;
+                
+                this.elements.logContent.appendChild(logEntry);
+                this.elements.logContent.scrollTop = this.elements.logContent.scrollHeight;
+            }
+        }
+        
+        // start everything when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new WebhookSpammer();
+        });
+    </script>
+</body>
+</html>
